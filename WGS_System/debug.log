@@ -1,0 +1,17 @@
+[0813/191404:WARNING:dns_config_service_win.cc(674)] Failed to read DnsConfig.
+[1002/180518:WARNING:dns_config_service_win.cc(674)] Failed to read DnsConfig.
+[1002/183333:WARNING:dns_config_service_win.cc(674)] Failed to read DnsConfig.
+[1002/183334:WARNING:dns_config_service_win.cc(674)] Failed to read DnsConfig.
+[1002/184740:WARNING:dns_config_service_win.cc(674)] Failed to read DnsConfig.
+[1002/195210:WARNING:dns_config_service_win.cc(674)] Failed to read DnsConfig.
+[1002/195210:WARNING:dns_config_service_win.cc(674)] Failed to read DnsConfig.
+[1002/195210:WARNING:dns_config_service_win.cc(674)] Failed to read DnsConfig.
+[0401/115510:ERROR:ipc_channel_win.cc(512)] pipe error: 232
+[0401/120736:WARNING:dns_config_service_win.cc(674)] Failed to read DnsConfig.
+[0401/120740:WARNING:dns_config_service_win.cc(674)] Failed to read DnsConfig.
+[0401/120741:WARNING:dns_config_service_win.cc(674)] Failed to read DnsConfig.
+[0401/123542:WARNING:dns_config_service_win.cc(674)] Failed to read DnsConfig.
+[0401/123547:WARNING:dns_config_service_win.cc(674)] Failed to read DnsConfig.
+[0401/123552:WARNING:dns_config_service_win.cc(674)] Failed to read DnsConfig.
+[0401/123556:WARNING:dns_config_service_win.cc(674)] Failed to read DnsConfig.
+[0401/123557:WARNING:dns_config_service_win.cc(674)] Failed to read DnsConfig.

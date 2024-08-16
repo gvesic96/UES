@@ -1,0 +1,7 @@
+ftn_vip_app/Release/*
+ftn_vip_app/Debug/*
+*.ini
+/.vs/ftn_vip_app/v14/.atsuo
+ftn_vip_app/.atmel-start-backup/*
+*.o
+*.d
