@@ -9,11 +9,21 @@
 #include "ftn_vip_lib/timer_1ms.h"
 #include "ftn_vip_lib/Quectel_BC68.h"
 
+/*OVDE SE NALAZI FUNKCIJA ZA ULAZAK U SLEEP MODE*/
+#include "hal_sleep.h"
+
+
+
+
+
 //on-board sensors:
 #include "ftn_vip_lib/SHTC3.h"
 #include "ftn_vip_lib/bmp280.h"
 #include "ftn_vip_lib/BH1750FVI.h"
 #include "ftn_vip_lib/LIS2DE12.h"
+
+
+static struct calendar_alarm alarm1;
 
 typedef struct  
 {
@@ -34,6 +44,26 @@ typedef struct
 /*#define ServerIP	"199.247.17.15"*/
 #define ServerIP	"45.76.87.164"
 #define ServerPort	50044
+
+
+/*
+	Callback for alarm
+*/
+static void alarm_cb(struct calendar_descriptor *const descr)
+{
+
+	struct calendar_date_time datetime;
+	calendar_get_date_time(&CALENDAR, &datetime);
+	
+	char *alarm_message = malloc(32);
+	sprintf(alarm_message, "ALARM AT %d-%d-%d %02d:%02d:%02d\r\n", datetime.date.year, datetime.date.month, datetime.date.day, datetime.time.hour, datetime.time.min, datetime.time.sec);
+	
+	usbUARTputString(alarm_message);
+
+}
+
+
+
 
 /*funkcija za ocitavanje podataka sa integrisanih senzora*/
 void getSensorData(sensor_data *sd)
@@ -121,8 +151,35 @@ int main(void)
 	
 	getSensorData(&sd);
 	
+	//set up calendar
+	struct calendar_date date;
+	struct calendar_time time;
+	
+	calendar_enable(&CALENDAR);
+	
+	date.year = 2019;
+	date.month = 10;
+	date.day = 11;
+	
+	time.hour = 18;
+	time.min = 0;
+	time.sec = 0;
+	
+	calendar_set_date(&CALENDAR, &date);
+	calendar_set_time(&CALENDAR, &time);
+	
+	alarm1.cal_alarm.datetime.time.sec = 5;
+	alarm1.cal_alarm.option = CALENDAR_ALARM_MATCH_SEC;
+	alarm1.cal_alarm.mode = REPEAT;
+
+	//set alarm
+	calendar_set_alarm(&CALENDAR, &alarm1, alarm_cb);
+	
+	
+	
 	while (1)
 	{
+		
 		sprintf(str, "Unesite tekst poruke -> ");
 		usbUARTputString(str);
 		while(!usbUARTavailable());
@@ -132,9 +189,15 @@ int main(void)
 		if(payload[0]==48){
 			sprintf(str, "{\"temp\": {\"value\": %d.%d},\"pres\": {\"value\": %d.%d},\"hum\": {\"value\": %d.%d},\"lum\": {\"value\": %ld}}", sd.shtc3_temp / 100, sd.shtc3_temp % 100, sd.bmp280_pres / 100, sd.bmp280_pres % 100, sd.shtc3_hum / 100, sd.shtc3_hum % 100, sd.lum);	
 			usbUARTputString(str);
-			echoTest(UDP, str);
+			//echoTest(UDP, str);
 			sprintf(str, "USPESNO SLANJE?!?!?\r\n");
 			usbUARTputString(str);
+			//sleep(0x6);
+		}
+		
+		if(payload[0]==49){
+			sleep(0x05);//0x6 je za OFF, 0x5je za BACKUP
+			delay(1000);//mora delay jer izgleda nastavi dalje i ponovo dodje do cekanja poruke sa serijske
 		}
 		
 		
