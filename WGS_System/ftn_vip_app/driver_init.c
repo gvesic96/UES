@@ -508,12 +508,12 @@ void system_init(void)
 
 	//ADDED FROM HERE ----------------------------------------------------------------
 	// Set pin direction to output
-	gpio_set_pin_direction(PA16, GPIO_DIRECTION_OUT);
-	gpio_set_pin_function(PA16, GPIO_PIN_FUNCTION_OFF);
+	gpio_set_pin_direction(SERVO, GPIO_DIRECTION_OUT);
+	gpio_set_pin_function(SERVO, GPIO_PIN_FUNCTION_OFF);
 	
 
-	gpio_set_pin_direction(PA18, GPIO_DIRECTION_OUT);
-	gpio_set_pin_function(PA18, GPIO_PIN_FUNCTION_OFF);
+	gpio_set_pin_direction(HEATER, GPIO_DIRECTION_OUT);
+	gpio_set_pin_function(HEATER, GPIO_PIN_FUNCTION_OFF);
 	
 	//---------------------------------------------------------------------------------
 
