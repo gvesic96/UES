@@ -45,6 +45,9 @@ typedef struct
 #define ServerIP	"45.76.87.164"
 #define ServerPort	50044
 
+#define ALARM_S = 0;
+#define ALARM_M = 0;
+#define ALARM_H = 1;
 
 /*
 	Callback for alarm
@@ -143,79 +146,106 @@ int main(void)
 	//NB-IoT connect
 	BC68_debugEnable(true, DEBUG_USB);
 	BC68_connect();
-	//mi zakomentarisali jer nam ne treba da se konektuje na mrezu
+	//bilo zakomentarisano kada nam nije trebalo konektovanje na mrezu
 
 	setLEDfreq(FREQ_1HZ);
 	sensor_data sd;
 	accel_3axis ad;
 	
-	getSensorData(&sd);
+	//getSensorData(&sd);
 	
 	//set up calendar
 	struct calendar_date date;
 	struct calendar_time time;
 	
-	calendar_enable(&CALENDAR);
+	calendar_enable(&CALENDAR);//ovo bi mozda moglo na kraju while petlje
 	
-	date.year = 2019;
-	date.month = 10;
-	date.day = 11;
+	date.year = 2024;
+	date.month = 3;
+	date.day = 17;
 	
-	time.hour = 18;
+	time.hour = 0;
 	time.min = 0;
 	time.sec = 0;
 	
 	calendar_set_date(&CALENDAR, &date);
-	calendar_set_time(&CALENDAR, &time);
+	calendar_set_time(&CALENDAR, &time);//u momentu kada se podesi pocinje da broji?
 	
-	alarm1.cal_alarm.datetime.time.sec = 5;
-	alarm1.cal_alarm.option = CALENDAR_ALARM_MATCH_SEC;
+	alarm1.cal_alarm.datetime.time.sec = 0;
+	alarm1.cal_alarm.datetime.time.min = 1;
+	//alarm1.cal_alarm.datetime.time.hour = 0;
+	//alarm1.cal_alarm.option = CALENDAR_ALARM_MATCH_SEC;
+	alarm1.cal_alarm.option = CALENDAR_ALARM_MATCH_MIN;//MATCH_MIN ce uporedjivati i minute i sekunde
+	
+	//alarm1.cal_alarm.option = CALENDAR_ALARM_MATCH_HOUR;
 	alarm1.cal_alarm.mode = REPEAT;
 
 	//set alarm
 	calendar_set_alarm(&CALENDAR, &alarm1, alarm_cb);
 	
+	//getSensorData(&sd);
 	
 	
-	while (1)
+	while(1)
 	{
-		
-		sprintf(str, "Unesite tekst poruke -> ");
+		getSensorData(&sd);
+		//int lumen = (int) sd.lum;
+		//int temp = (int) sd.shtc3_temp;
+		//check for light and determine if it day or night
+		if(sd.lum>10){
+			//DAY
+			if((sd.shtc3_temp/10)>20){
+				//open hatch
+				sprintf(str, "DAY: Hatch opened.\r\n");
+				usbUARTputString(str);
+				//delay(1000);
+				}else{
+				//close hatch
+				sprintf(str, "DAY: Hatch closed.\r\n");
+				usbUARTputString(str);
+				//delay(1000);
+			}
+			
+			
+			}else{
+			//NIGHT
+			//close hatch
+			sprintf(str, "NIGHT: Hatch closed.\r\n");
+			usbUARTputString(str);
+			if((sd.shtc3_temp/10)<15){
+				//turn on heater
+				sprintf(str, "NIGHT: Heater turned on.\r\n");
+				usbUARTputString(str);
+				delay(30000);//wait for 30 seconds after turning on the heater before checking again
+				continue;//get into new iteration of while loop skip sending the data
+				}else{
+				if((sd.shtc3_temp/10)>20){
+					//turn off heater
+					sprintf(str, "NIGHT: Heater turned off.\r\n");
+					usbUARTputString(str);
+					
+				}
+			}
+		}
+		//send sensor data to server
+		sprintf(str, "{\"temp\": {\"value\": %d.%d},\"pres\": {\"value\": %d.%d},\"hum\": {\"value\": %d.%d},\"lum\": {\"value\": %ld}}\r\n", sd.shtc3_temp / 100, sd.shtc3_temp % 100, sd.bmp280_pres / 100, sd.bmp280_pres % 100, sd.shtc3_hum / 100, sd.shtc3_hum % 100, sd.lum);
 		usbUARTputString(str);
-		while(!usbUARTavailable());
-		delay(20);
+		delay(5000);
+		//echoTest(UDP, str); //sending data to server
+	
+		gpio_set_pin_level(PA16, true);
+		gpio_set_pin_level(PA18, true);
+		delay(2000);
 		
-		usbUARTgetString(payload);
-		if(payload[0]==48){
-			sprintf(str, "{\"temp\": {\"value\": %d.%d},\"pres\": {\"value\": %d.%d},\"hum\": {\"value\": %d.%d},\"lum\": {\"value\": %ld}}", sd.shtc3_temp / 100, sd.shtc3_temp % 100, sd.bmp280_pres / 100, sd.bmp280_pres % 100, sd.shtc3_hum / 100, sd.shtc3_hum % 100, sd.lum);	
-			usbUARTputString(str);
-			//echoTest(UDP, str);
-			sprintf(str, "USPESNO SLANJE?!?!?\r\n");
-			usbUARTputString(str);
-			//sleep(0x6);
-		}
-		
-		if(payload[0]==49){
-			sleep(0x05);//0x6 je za OFF, 0x5je za BACKUP
-			delay(1000);//mora delay jer izgleda nastavi dalje i ponovo dodje do cekanja poruke sa serijske
-		}
+		gpio_set_pin_level(PA16, false);
+		gpio_set_pin_level(PA18, false);
+		delay(2000);
 		
 		
+		sprintf(str, "Going to sleep: BACKUP\r\n");
+		usbUARTputString(str);
+		sleep(0x05);
 		
-		
-		//sprintf(str, "%s\r\n", payload);
-		//usbUARTputString(str);
-		
-		//echoTest(UDP, payload);
-		//echoTest(TCP, payload);
-		
-		
-		//getAccelData(&ad);
-		//getSensorData(&sd);
-		//echoTest(UDP, "UDP test data...");
-		//echoTest(TCP, "TCP test data...");
-		
-		//delay(5000);
 		
 	}
 }

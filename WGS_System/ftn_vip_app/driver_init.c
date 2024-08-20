@@ -506,6 +506,17 @@ void system_init(void)
 
 	// GPIO on PB23
 
+	//ADDED FROM HERE ----------------------------------------------------------------
+	// Set pin direction to output
+	gpio_set_pin_direction(PA16, GPIO_DIRECTION_OUT);
+	gpio_set_pin_function(PA16, GPIO_PIN_FUNCTION_OFF);
+	
+
+	gpio_set_pin_direction(PA18, GPIO_DIRECTION_OUT);
+	gpio_set_pin_function(PA18, GPIO_PIN_FUNCTION_OFF);
+	
+	//---------------------------------------------------------------------------------
+
 	// Set pin direction to input
 	gpio_set_pin_direction(BUTTON, GPIO_DIRECTION_IN);
 
