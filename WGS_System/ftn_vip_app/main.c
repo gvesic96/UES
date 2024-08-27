@@ -17,7 +17,7 @@
 #include "ftn_vip_lib/BH1750FVI.h"
 
 
-static struct calendar_alarm alarm1;
+static struct calendar_alarm alarm1, alarm2;
 
 typedef struct  
 {
@@ -46,11 +46,6 @@ static void alarm_cb(struct calendar_descriptor *const descr)
 	struct calendar_date_time datetime;
 	calendar_get_date_time(&CALENDAR, &datetime);
 	
-	//char *alarm_message = malloc(32);
-	//sprintf(alarm_message, "ALARM AT %d-%d-%d %02d:%02d:%02d\r\n", datetime.date.year, datetime.date.month, datetime.date.day, datetime.time.hour, datetime.time.min, datetime.time.sec);
-	
-	//usbUARTputString(alarm_message);
-
 }
 
 
@@ -70,24 +65,18 @@ void getSensorData(sensor_data *sd)
 }
 
 
-//funkcija za slanje stringa serveru na pritisak tastera
+//funkcija za slanje stringa serveru
 
-/*void echoTest(uint8_t protocol, char *payload)
+void echoTest(uint8_t protocol, char *payload)
 {
 	char str[128], response[128];
-
-	sprintf(str, "Pritisni taster za slanje...\r\n");
-	usbUARTputString(str);
-	while (gpio_get_pin_level(BUTTON));
 
 	char socket = BC68_openSocket(1, protocol);
 	int16_t rxBytes = BC68_tx(protocol, ServerIP, ServerPort, payload, strlen(payload), socket);
 	BC68_rx(response, rxBytes, socket);
-	sprintf(str, "Odgovor servera -> %s\r\n", response);
-	usbUARTputString(str);
 	BC68_closeSocket(socket);
 }
-*/
+
 
 
 void open_hatch(void){
@@ -177,11 +166,11 @@ int main(void)
 	calendar_set_date(&CALENDAR, &date);
 	calendar_set_time(&CALENDAR, &time);//u momentu kada se podesi pocinje da broji?
 	
-	alarm1.cal_alarm.datetime.time.sec = 5;
-	//alarm1.cal_alarm.datetime.time.min = 1;
+	alarm1.cal_alarm.datetime.time.sec = 0;
+	alarm1.cal_alarm.datetime.time.min = 10;
 	//alarm1.cal_alarm.datetime.time.hour = 0;
-	alarm1.cal_alarm.option = CALENDAR_ALARM_MATCH_SEC;
-	//alarm1.cal_alarm.option = CALENDAR_ALARM_MATCH_MIN;//MATCH_MIN ce uporedjivati i minute i sekunde
+	//alarm1.cal_alarm.option = CALENDAR_ALARM_MATCH_SEC;
+	alarm1.cal_alarm.option = CALENDAR_ALARM_MATCH_MIN;//MATCH_MIN ce uporedjivati i minute i sekunde
 	
 	//alarm1.cal_alarm.option = CALENDAR_ALARM_MATCH_HOUR;
 	alarm1.cal_alarm.mode = REPEAT;
@@ -189,65 +178,83 @@ int main(void)
 	//set alarm
 	calendar_set_alarm(&CALENDAR, &alarm1, alarm_cb);
 	
-	//getSensorData(&sd);
+	/*
+	alarm2.cal_alarm.datetime.time.sec = 0;
+	alarm2.cal_alarm.datetime.time.min = 15;
+	//alarm1.cal_alarm.datetime.time.hour = 0;
+	//alarm1.cal_alarm.option = CALENDAR_ALARM_MATCH_SEC;
+	alarm2.cal_alarm.option = CALENDAR_ALARM_MATCH_MIN;//MATCH_MIN ce uporedjivati i minute i sekunde
 	
+	//alarm1.cal_alarm.option = CALENDAR_ALARM_MATCH_HOUR;
+	alarm2.cal_alarm.mode = REPEAT;
+
+	//set alarm
+	calendar_set_alarm(&CALENDAR, &alarm2, alarm_cb);
+	*/
+	
+	
+	bool send_permit = true;
+	bool heater_state = false;
 	
 	while(1)
 	{
 		
 		getSensorData(&sd);
-		//int lumen = (int) sd.lum;
-		//int temp = (int) sd.shtc3_temp;
-		//check for light and determine if it day or night
-		if(sd.lum>10){
+		delay(500);
+		
+		
+		if(sd.lum>20){
 			//DAY
-			if((sd.shtc3_temp/10)>20){
-				//open hatch
+			if((sd.shtc3_hum/100)>65){
 				open_hatch();
-				//sprintf(str, "DAY: Hatch opened.\r\n");
-				//usbUARTputString(str);
-				//delay(1000);
-				}else{
-				//close hatch
-				close_hatch();
-				//sprintf(str, "DAY: Hatch closed.\r\n");
-				//usbUARTputString(str);
-				//delay(1000);
+				delay(60000);//sackeaj minut da se smanji vlaznost
+				close_hatch();//zatvori klapnu
 			}
 			
-			
-			}else{
+			if((sd.shtc3_temp/100)>20){
+				open_hatch();
+					//otvori klapnu ako je temperatura u toku dana veca od 20C	
+				}else{
+				close_hatch();
+					//zatvori klapnu ako je temperatura u toku dana manja od 20C
+				}
+				
+		}else{
 			//NIGHT
-			//close hatch
-			close_hatch();
-			//sprintf(str, "NIGHT: Hatch closed.\r\n");
-			//usbUARTputString(str);
-			if((sd.shtc3_temp/10)<15){
-				//turn on heater
-				//sprintf(str, "NIGHT: Heater turned on.\r\n");
-				//usbUARTputString(str);
-				gpio_set_pin_level(HEATER, true);
-				delay(30000);//wait for 30 seconds after turning on the heater before checking again
-				continue;//get into new iteration of while loop skip sending the data
-			}else{
-				if((sd.shtc3_temp/10)>20){
-					//turn off heater
-					gpio_set_pin_level(HEATER, false);
-					//sprintf(str, "NIGHT: Heater turned off.\r\n");
-					//usbUARTputString(str);
-					
+				close_hatch();//nocu drzi zatvorenu klapnu
+				
+				if((sd.shtc3_temp/100)<15){
+					//turn on heater
+					gpio_set_pin_level(HEATER, true);
+					heater_state=true;
+					if(send_permit){
+						//send data to server
+						sprintf(str, "{\"temp\": {\"value\": %d.%d},\"humi\": {\"value\": %d.%d},\"lum\": {\"value\": %ld},\"heater\": {\"value\": %d}}", sd.shtc3_temp / 100, sd.shtc3_temp % 100, sd.shtc3_hum / 100, sd.shtc3_hum % 100, sd.lum, heater_state);
+						echoTest(UDP, str); //sending data to server
+						
+						send_permit=false;
+					}			
+					delay(60000);//sacekaj 60 sekundi pre ponovne provere
+					continue;//udji ponovo u novu iteraciju petlje
+				}else{
+					if((sd.shtc3_temp/100)>20){
+						//turn off heater
+						gpio_set_pin_level(HEATER, false);
+						heater_state=false;
+						send_permit=true;
 				}
 			}
 		}
+		
 		//send sensor data to server
-		//sprintf(str, "{\"temp\": {\"value\": %d.%d},\"pres\": {\"value\": %d.%d},\"hum\": {\"value\": %d.%d},\"lum\": {\"value\": %ld}}\r\n", sd.shtc3_temp / 100, sd.shtc3_temp % 100, sd.bmp280_pres / 100, sd.bmp280_pres % 100, sd.shtc3_hum / 100, sd.shtc3_hum % 100, sd.lum);
-		//usbUARTputString(str);
-		delay(7000);
-		//echoTest(UDP, str); //sending data to server
+		if(send_permit){
+			sprintf(str, "{\"temp\": {\"value\": %d.%d},\"humi\": {\"value\": %d.%d},\"lum\": {\"value\": %ld},\"heater\": {\"value\": %d}}", sd.shtc3_temp / 100, sd.shtc3_temp % 100, sd.shtc3_hum / 100, sd.shtc3_hum % 100, sd.lum, heater_state);
+			echoTest(UDP, str); //sending data to server
 			
-		//sprintf(str, "Going to sleep: BACKUP\r\n");
-		//usbUARTputString(str);
-		sleep(0x05);
+		}
+			
+		sleep(0x05);//GOING TO SLEEP IN BACKUP MODE
+		
 		
 		
 	}
