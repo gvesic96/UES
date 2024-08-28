@@ -17,7 +17,7 @@
 #include "ftn_vip_lib/BH1750FVI.h"
 
 
-static struct calendar_alarm alarm1, alarm2;
+static struct calendar_alarm alarm1;
 
 typedef struct  
 {
@@ -33,9 +33,11 @@ typedef struct
 #define ServerIP	"45.76.87.164"
 #define ServerPort	50044
 
-#define ALARM_S = 0;
-#define ALARM_M = 0;
-#define ALARM_H = 1;
+
+//parametri alarma
+#define ALARM_S 0;
+#define ALARM_M 0;
+#define ALARM_H 1;
 
 /*
 	Callback for alarm
@@ -131,8 +133,7 @@ int main(void)
 	//kreira dva niza karaktera
 	char str[256], payload[64];
 	delay(3000);
-	//sprintf(str, "--- FTN-VIP NB-IoT ---\r\n");
-	//usbUARTputString(str);//posalje na serijsku komunikaciju
+	
 	setLEDfreq(FREQ_1HZ);
 	enableLED();
 
@@ -153,7 +154,7 @@ int main(void)
 	struct calendar_date date;
 	struct calendar_time time;
 	
-	calendar_enable(&CALENDAR);//ovo bi mozda moglo na kraju while petlje
+	calendar_enable(&CALENDAR);
 	
 	date.year = 2024;
 	date.month = 3;
@@ -164,33 +165,23 @@ int main(void)
 	time.sec = 0;
 	
 	calendar_set_date(&CALENDAR, &date);
-	calendar_set_time(&CALENDAR, &time);//u momentu kada se podesi pocinje da broji?
+	calendar_set_time(&CALENDAR, &time);
 	
-	alarm1.cal_alarm.datetime.time.sec = 0;
-	alarm1.cal_alarm.datetime.time.min = 10;
-	//alarm1.cal_alarm.datetime.time.hour = 0;
+	alarm1.cal_alarm.datetime.time.sec = ALARM_S;
+	alarm1.cal_alarm.datetime.time.min = ALARM_M;
+	alarm1.cal_alarm.datetime.time.hour = ALARM_H;
+	
 	//alarm1.cal_alarm.option = CALENDAR_ALARM_MATCH_SEC;
-	alarm1.cal_alarm.option = CALENDAR_ALARM_MATCH_MIN;//MATCH_MIN ce uporedjivati i minute i sekunde
+	//alarm1.cal_alarm.option = CALENDAR_ALARM_MATCH_MIN;//MATCH_MIN ce uporedjivati i minute i sekunde
 	
-	//alarm1.cal_alarm.option = CALENDAR_ALARM_MATCH_HOUR;
+	alarm1.cal_alarm.option = CALENDAR_ALARM_MATCH_HOUR;
+	
 	alarm1.cal_alarm.mode = REPEAT;
 
 	//set alarm
 	calendar_set_alarm(&CALENDAR, &alarm1, alarm_cb);
 	
-	/*
-	alarm2.cal_alarm.datetime.time.sec = 0;
-	alarm2.cal_alarm.datetime.time.min = 15;
-	//alarm1.cal_alarm.datetime.time.hour = 0;
-	//alarm1.cal_alarm.option = CALENDAR_ALARM_MATCH_SEC;
-	alarm2.cal_alarm.option = CALENDAR_ALARM_MATCH_MIN;//MATCH_MIN ce uporedjivati i minute i sekunde
 	
-	//alarm1.cal_alarm.option = CALENDAR_ALARM_MATCH_HOUR;
-	alarm2.cal_alarm.mode = REPEAT;
-
-	//set alarm
-	calendar_set_alarm(&CALENDAR, &alarm2, alarm_cb);
-	*/
 	
 	
 	bool send_permit = true;
@@ -205,11 +196,6 @@ int main(void)
 		
 		if(sd.lum>20){
 			//DAY
-			if((sd.shtc3_hum/100)>65){
-				open_hatch();
-				delay(60000);//sackeaj minut da se smanji vlaznost
-				close_hatch();//zatvori klapnu
-			}
 			
 			if((sd.shtc3_temp/100)>20){
 				open_hatch();
@@ -218,6 +204,12 @@ int main(void)
 				close_hatch();
 					//zatvori klapnu ako je temperatura u toku dana manja od 20C
 				}
+				
+			if((sd.shtc3_hum/100)>65 && (sd.shtc3_temp/100)<=20){
+				open_hatch();
+				delay(60000);//sacekaj minut da se provetri (smanji vlaznost)
+				close_hatch();//zatvori klapnu
+			}
 				
 		}else{
 			//NIGHT
@@ -253,6 +245,7 @@ int main(void)
 			
 		}
 			
+		disableLED();//disabling led before going into sleep
 		sleep(0x05);//GOING TO SLEEP IN BACKUP MODE
 		
 		
