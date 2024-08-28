@@ -197,6 +197,10 @@ int main(void)
 		if(sd.lum>20){
 			//DAY
 			
+			gpio_set_pin_level(HEATER, false);
+			heater_state=false;
+			send_permit=true;
+			
 			if((sd.shtc3_temp/100)>20){
 				open_hatch();
 					//otvori klapnu ako je temperatura u toku dana veca od 20C	
@@ -226,9 +230,10 @@ int main(void)
 						
 						send_permit=false;
 					}			
-					delay(60000);//sacekaj 60 sekundi pre ponovne provere
+					delay(10000);//sacekaj 60 sekundi pre ponovne provere
 					continue;//udji ponovo u novu iteraciju petlje
 				}else{
+					if((sd.shtc3_temp/100)<=20){delay(10000); continue;}
 					if((sd.shtc3_temp/100)>20){
 						//turn off heater
 						gpio_set_pin_level(HEATER, false);
