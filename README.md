@@ -2,6 +2,7 @@
 Interconnected embedded systems (via internet or not) - IoT projects
 
 NB-IoT project - Watermelon Guard System (WGS)
+
   Autonomous system for monitoring environment parameters and controling parameters of interest with a goal of providing best conditions for watermelon growth in the field.
   Implemented using Atmel SAM L21 microcontroller and Quectel BC68 NB-IoT module for communication with CLOUD.
   Microcontroller mostly sleeps, and wakes up every hour to check environment temperature, humidity and ambiental light.
