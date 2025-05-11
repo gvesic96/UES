@@ -11,3 +11,6 @@ NB-IoT project - Watermelon Guard System (WGS)
   If humidity is too high servo SG90 opens the hatch and controller stays awake until it drops after which it closes the hatch and goes to sleep.
   If temperature is too low, controller closes the hatch, turns on the heater and waits until it rises after which it goes to sleep.
   Every time before goint to sleep message is uplink message is sent via NB-IoT network to server which gathers data, put it into SQL database table, and draws graph on website for monitoring.
+
+  ![image](https://github.com/user-attachments/assets/85a25d31-28c0-4a0e-b4fa-9bf8f25c043d)
+
