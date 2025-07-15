@@ -14,3 +14,4 @@ NB-IoT project - Watermelon Guard System (WGS)
 
   ![image](https://github.com/user-attachments/assets/85a25d31-28c0-4a0e-b4fa-9bf8f25c043d)
 
+<img width="703" height="657" alt="image" src="https://github.com/user-attachments/assets/fadfc34a-77ed-4605-9aa7-57621ffc4c9d" />
